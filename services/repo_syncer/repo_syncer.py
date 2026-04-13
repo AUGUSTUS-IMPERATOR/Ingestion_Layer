@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("repo-syncer")
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
-WORKDIR = Path(os.getenv("REPO_WORKDIR", "/repos"))
+WORKDIR = Path(os.getenv("REPO_WORKDIR", "/workspaces"))
 GITLAB_TOKEN = os.getenv("GITLAB_TOKEN", "")
 
 _repo_locks: dict[str, asyncio.Lock] = {}
@@ -40,9 +40,9 @@ async def _run(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
     return proc.returncode, stdout.decode().strip(), stderr.decode().strip()
 
 
-async def sync_repo(namespace: str, repo_url: str, branch: str | None) -> None:
+async def sync_repo(namespace: str, repo_url: str, branch: str | None, issue_id: int) -> None:
     repo_name = namespace.split("/")[-1]
-    dest = WORKDIR / repo_name
+    dest = WORKDIR / f"ticket-{issue_id}"
     auth_url = _authenticated_url(repo_url)
 
     async with _lock_for(namespace):
@@ -117,7 +117,7 @@ async def consume() -> None:
             logger.info(f"Issue #{issue_id} ({action}) — syncing repo {namespace}")
 
             asyncio.create_task(
-                sync_repo(namespace, repo_url, branch),
+                sync_repo(namespace, repo_url, branch,  issue_id),
                 name=f"sync-{namespace}-{issue_id}",
             )
 
