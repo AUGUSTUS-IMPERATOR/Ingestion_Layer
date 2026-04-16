@@ -82,7 +82,7 @@ services:
       REPO_WORKDIR: /workspaces
       GITLAB_TOKEN: ${GITLAB_TOKEN:-}
     volumes:
-      - ./.workspace:/workspaces 
+      - ../root/workspace:/workspaces 
     restart: on-failure
     depends_on:
       kafka-init:
